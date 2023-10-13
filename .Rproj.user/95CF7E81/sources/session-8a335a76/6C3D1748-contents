@@ -1,0 +1,74 @@
+---
+title: Gene enrichment
+author: Simon Urbanek
+date: '2023-10-13'
+slug: gene-enrichment
+categories: [quantitative biology]
+tags: [transcriptomics,genes]
+---
+
+
+
+## 0. Load libraries
+
+```{r}
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# 
+# BiocManager::install("clusterProfiler")
+BiocManager::install("org.Hs.eg.db")
+# 
+# install.packages("enrichplot", repos = "https://cran.r-project.org")
+# install.packages("enrichR", repos = "https://cran.r-project.org")
+# library(enrichR)
+# install.packages("crayon", repos = "https://cran.r-project.org")
+# install.packages("clusterProfiler", repos = "https://cran.r-project.org")
+# install.packages("enrichplot", repos = "https://cran.r-project.org")
+# install.packages("org.Hs.eg.db")
+# install.packages("GOSemSim")
+# install.packages("DOSE")
+library(crayon) # So messages can be in blue font
+#library(enrichplot)
+```
+## User defined variables
+```{r}
+
+gene_sets <- 'data/geni_sovrapposti.csv'
+output_dir <- 'results'
+
+working_labels <- list.files(gene_sets, pattern='.txt')
+working_labels
+```
+## Run the analysis on different Ontologies
+```{r}
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(GOSemSim)
+library(DOSE)
+
+# Perform analysis on enrichPathway
+ck_pathway <- compareCluster(all_identifiers, fun="enrichPathway", pvalueCutoff=0.05)
+sm_pathway <- pairwise_termsim(ck_pathway)
+dotplot(ck_pathway, size='count', showCategory=10, title='enrichPathway')
+emapplot(sm_pathway)
+storage_pathway <- paste(output_dir, 'clusterProfiler_enrichments_RP.csv', sep='/')
+write.csv(ck_pathway@compareClusterResult, storage_pathway)
+
+# Perform analysis on enrichGO
+ck_go <- compareCluster(all_identifiers, fun="enrichGO", pvalueCutoff=0.05, OrgDb=org.Hs.eg.db)
+sm_go <- pairwise_termsim(ck_go)
+dotplot(ck_go, size='count', showCategory=10, title='enrichGO')
+emapplot(sm_go)
+
+# Perform analysis on enrichKEGG
+ck_kegg <- compareCluster(all_identifiers, fun="enrichKEGG", pvalueCutoff=0.05)
+sm_kegg <- pairwise_termsim(ck_kegg)
+dotplot(ck_kegg, size='count', showCategory=10, title='enrichKEGG')
+emapplot(sm_kegg)
+
+# Perform analysis on enrichDO
+ck_do <- compareCluster(all_identifiers, fun="enrichDO", pvalueCutoff=0.05)
+sm_do <- pairwise_termsim(ck_do)
+dotplot(ck_do, size='count', showCategory=5, title='enrichDO')
+emapplot(sm_do)
+```
