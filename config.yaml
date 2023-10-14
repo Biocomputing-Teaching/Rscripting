@@ -1,5 +1,5 @@
 baseurl: /
-publishDir: docs
+publishDir: public
 languageCode: en-US
 title: Examples on R scripting
 theme: hugo-lithium
