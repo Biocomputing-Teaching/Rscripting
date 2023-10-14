@@ -29,8 +29,13 @@ tags: [transcriptomics,genes]
 ```
 ## Load the list of genes
 ```{r}
-gene_list <- read.csv('data/geni_sovrapposti.csv',header=TRUE)
-gene_list <- gene_list[,'x']
+df <- read.csv('data/Control_vs_NPDR.tsv',header=TRUE,sep='\t')
+# obtain the log2foldchage column
+original_gene_list <- df$log2FoldChange
+# name the vector
+names(original_gene_list) <- df$ext_gene
+# sort the list in dicreasing order, required for clusterprolfier
+gene_list <- sort(original_gene_list, decreasing = TRUE)
 gene_list
 output_dir <- 'results'
 ```
