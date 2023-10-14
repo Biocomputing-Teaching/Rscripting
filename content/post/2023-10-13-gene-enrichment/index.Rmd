@@ -7,7 +7,9 @@ categories: [quantitative biology]
 tags: [transcriptomics,genes]
 ---
 
+# Enrichment analysis
 
+Having obtained a file with the results of a DSeq2 differential expression calculation (stored below in the variable `datafile`), we perform an enrichment analysis in different databases.
 
 ## Install packages
 
@@ -29,7 +31,9 @@ tags: [transcriptomics,genes]
 ```
 ## Load the list of genes
 ```{r}
-df <- read.csv('data/Control_vs_NPDR.tsv',header=TRUE,sep='\t')
+datafile <- 'data/Control_vs_NPDR.tsv'
+df <- read.csv(datafile,header=TRUE,sep='\t')
+head(df)
 # obtain the log2foldchage column
 original_gene_list <- df$log2FoldChange
 # name the vector
@@ -76,7 +80,7 @@ emapplot(sm_go)
 
 ### Perform analysis on enrichKEGG
 ```{r}
-ck_kegg <- compareCluster(all_identifiers, fun="enrichKEGG", pvalueCutoff=0.05)
+ck_kegg <- compareCluster(gene_list, fun="enrichKEGG", pvalueCutoff=0.05)
 sm_kegg <- pairwise_termsim(ck_kegg)
 dotplot(ck_kegg, size='count', showCategory=10, title='enrichKEGG')
 emapplot(sm_kegg)
@@ -84,7 +88,7 @@ emapplot(sm_kegg)
 
 ### Perform analysis on enrichDO
 ```{r}
-ck_do <- compareCluster(all_identifiers, fun="enrichDO", pvalueCutoff=0.05)
+ck_do <- compareCluster(gene_list, fun="enrichDO", pvalueCutoff=0.05)
 sm_do <- pairwise_termsim(ck_do)
 dotplot(ck_do, size='count', showCategory=5, title='enrichDO')
 emapplot(sm_do)
