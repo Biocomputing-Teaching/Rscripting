@@ -6,7 +6,25 @@
     <description>Recent content in Tags on Examples on R scripting</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Tue, 01 Dec 2020 21:13:14 -0500</lastBuildDate><atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 13 Oct 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>genes</title>
+      <link>/tags/genes/</link>
+      <pubDate>Fri, 13 Oct 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/genes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>transcriptomics</title>
+      <link>/tags/transcriptomics/</link>
+      <pubDate>Fri, 13 Oct 2023 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/transcriptomics/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>plot</title>
       <link>/tags/plot/</link>
