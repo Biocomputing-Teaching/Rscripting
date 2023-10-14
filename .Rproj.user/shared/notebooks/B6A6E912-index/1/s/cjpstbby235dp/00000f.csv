@@ -1,3 +1,0 @@
-"0","ck_go <- compareCluster(all_identifiers, fun=""enrichGO"", pvalueCutoff=0.05, OrgDb=org.Hs.eg.db)"
-"2","Error: object 'all_identifiers' not found
-"

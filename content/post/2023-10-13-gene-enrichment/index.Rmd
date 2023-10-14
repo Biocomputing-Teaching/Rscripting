@@ -1,15 +1,20 @@
 ---
-title: Gene enrichment
-author: Simon Urbanek
-date: '2023-10-13'
-slug: gene-enrichment
-categories: [quantitative biology]
-tags: [transcriptomics,genes]
+title: "Gene enrichment"
+author: "Simon Urbanek"
+date: "2023-10-13"
+output: pdf_document
+categories: quantitative biology
+tags:
+- transcriptomics
+- genes
+slug: "gene-enrichment"
 ---
 
 # Enrichment analysis
 
 Having obtained a file with the results of a DSeq2 differential expression calculation (stored below in the variable `datafile`), we perform an enrichment analysis in different databases.
+
+Check extra info ![here](https://rpubs.com/Alexis22/ClusterProfiler)
 
 ## Install packages
 
@@ -20,7 +25,7 @@ Having obtained a file with the results of a DSeq2 differential expression calcu
 # 
 # BiocManager::install("clusterProfiler")
 # BiocManager::install("org.Hs.eg.db")
-#BiocManager::install("ReactomePA")
+# BiocManager::install("ReactomePA")
 # 
 # install.packages("enrichplot", repos = "https://cran.r-project.org")
 # install.packages("enrichR", repos = "https://cran.r-project.org")
@@ -29,35 +34,68 @@ Having obtained a file with the results of a DSeq2 differential expression calcu
 # install.packages("DOSE")
 
 ```
-## Load the list of genes
-```{r}
-datafile <- 'data/Control_vs_NPDR.tsv'
-df <- read.csv(datafile,header=TRUE,sep='\t')
-head(df)
-# obtain the log2foldchage column
-original_gene_list <- df$log2FoldChange
-# name the vector
-names(original_gene_list) <- df$ext_gene
-# sort the list in dicreasing order, required for clusterprolfier
-gene_list <- sort(original_gene_list, decreasing = TRUE)
-gene_list
-output_dir <- 'results'
-```
 ## Load libraries
 ```{r}
 
 library(clusterProfiler)
-# library(org.Hs.eg.db)
+library(org.Hs.eg.db)
 # library(GOSemSim)
 # library(DOSE)
 # library(enrichR)
 # library(crayon) # So messages can be in blue font
 library(enrichplot)
 ```
+## Load the list of genes
+```{r}
+datafile <- 'data/Control_vs_NPDR.tsv'
+df <- read.csv(datafile,header=TRUE,sep='\t')
+head(df)
+# obtain the log2foldchage column
+fold_change <- df$log2FoldChange
+# name the vector
+names(fold_change) <- df$ext_gene
+
+genes <- mapIds(org.Hs.eg.db, df$ext_gene, 'ENTREZID', 'SYMBOL', multiVals = "first")
+names(fold_change) <- genes
+head(fold_change)
+# sort the list in dicreasing order, required for clusterprolfier
+gene_list <- sort(fold_change, decreasing = TRUE)
+head(gene_list)
+output_dir <- 'results'
+```
+
 
 ## Run the analysis on different Ontologies
 
+### Perform analysis on enrichKEGG
+```{r}
+KEGG_genes <- enrichKEGG(gene= genes, organism= "hsa", pvalueCutoff = 0.05)
+head(KEGG_genes)
+dotplot(KEGG_genes,showCategory=10)
+sm_kegg <- pairwise_termsim(KEGG_genes)
+enrichplot::emapplot(sm_kegg, showCategory = 50)
+```
+
+```{r}
+# ck_kegg <- compareCluster(gene_list, fun="enrichKEGG", pvalueCutoff=0.05)
+# sm_kegg <- pairwise_termsim(ck_kegg)
+# dotplot(ck_kegg, size='count', showCategory=10, title='enrichKEGG')
+# emapplot(sm_kegg)
+```
+
+### Perfomr GSEA
+
+```{r}
+GSEA_genes <- gseKEGG(geneList     = gene_list, organism     = "hsa", nPerm= 1000,         minGSSize    = 10, pvalueCutoff = 1, verbose      = FALSE)
+head(GSEA_genes)
+gseaplot(GSEA_genes,geneSetID=1,title=GSEA_genes$Description[1])
+gseaplot(GSEA_genes,geneSetID=2,title=GSEA_genes$Description[2])
+gseaplot(GSEA_genes,geneSetID=3,title=GSEA_genes$Description[3])
+gseaplot(GSEA_genes,geneSetID=4,title=GSEA_genes$Description[4])
+```
+
 ### Perform analysis on enrichPathway
+
 
 ```{r}
 ck_pathway <- compareCluster(gene_list, fun="enrichPathway", pvalueCutoff=0.05)
@@ -78,13 +116,6 @@ dotplot(ck_go, size='count', showCategory=10, title='enrichGO')
 emapplot(sm_go)
 ```
 
-### Perform analysis on enrichKEGG
-```{r}
-ck_kegg <- compareCluster(gene_list, fun="enrichKEGG", pvalueCutoff=0.05)
-sm_kegg <- pairwise_termsim(ck_kegg)
-dotplot(ck_kegg, size='count', showCategory=10, title='enrichKEGG')
-emapplot(sm_kegg)
-```
 
 ### Perform analysis on enrichDO
 ```{r}
