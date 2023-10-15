@@ -1,13 +1,9 @@
 ---
 title: "Gene enrichment"
-author: "Simon Urbanek"
+author: "Jordi Villà-Freixa"
 date: "2023-10-13"
-output: pdf_document
-categories: quantitative biology
-tags:
-- transcriptomics
-- genes
-slug: "gene-enrichment"
+categories: ["R"]
+tags: ["transcriptomics", "gene-enrichment"]
 ---
 
 # Enrichment analysis
@@ -34,9 +30,10 @@ Check extra info ![here](https://rpubs.com/Alexis22/ClusterProfiler)
 # install.packages("DOSE")
 
 ```
-## Load libraries
-```{r}
 
+## Load libraries
+
+```{r}
 library(clusterProfiler)
 library(org.Hs.eg.db)
 # library(GOSemSim)
@@ -45,16 +42,15 @@ library(org.Hs.eg.db)
 # library(crayon) # So messages can be in blue font
 library(enrichplot)
 ```
+
 ## Load the list of genes
+
 ```{r}
 datafile <- 'data/Control_vs_NPDR.tsv'
 df <- read.csv(datafile,header=TRUE,sep='\t')
-head(df)
 # obtain the log2foldchage column
 fold_change <- df$log2FoldChange
 # name the vector
-names(fold_change) <- df$ext_gene
-
 genes <- mapIds(org.Hs.eg.db, df$ext_gene, 'ENTREZID', 'SYMBOL', multiVals = "first")
 names(fold_change) <- genes
 head(fold_change)
@@ -64,10 +60,10 @@ head(gene_list)
 output_dir <- 'results'
 ```
 
-
 ## Run the analysis on different Ontologies
 
 ### Perform analysis on enrichKEGG
+
 ```{r}
 KEGG_genes <- enrichKEGG(gene= genes, organism= "hsa", pvalueCutoff = 0.05)
 head(KEGG_genes)
@@ -83,7 +79,7 @@ enrichplot::emapplot(sm_kegg, showCategory = 50)
 # emapplot(sm_kegg)
 ```
 
-### Perfomr GSEA
+### Perform GSEA
 
 ```{r}
 GSEA_genes <- gseKEGG(geneList     = gene_list, organism     = "hsa", nPerm= 1000,         minGSSize    = 10, pvalueCutoff = 1, verbose      = FALSE)
@@ -94,33 +90,14 @@ gseaplot(GSEA_genes,geneSetID=3,title=GSEA_genes$Description[3])
 gseaplot(GSEA_genes,geneSetID=4,title=GSEA_genes$Description[4])
 ```
 
-### Perform analysis on enrichPathway
-
-
-```{r}
-ck_pathway <- compareCluster(gene_list, fun="enrichPathway", pvalueCutoff=0.05)
-ck_pathway
-sm_pathway <- pairwise_termsim(ck_pathway)
-dotplot(ck_pathway, size='count', showCategory=10, title='enrichPathway')
-sm_pathway
-emapplot(sm_pathway)
-storage_pathway <- paste(output_dir, 'clusterProfiler_enrichments_RP.csv', sep='/')
-write.csv(ck_pathway@compareClusterResult, storage_pathway)
-```
-
 ### Perform analysis on enrichGO
+
 ```{r}
-ck_go <- compareCluster(gene_list, fun="enrichGO", pvalueCutoff=0.05, OrgDb=org.Hs.eg.db)
-sm_go <- pairwise_termsim(ck_go)
-dotplot(ck_go, size='count', showCategory=10, title='enrichGO')
-emapplot(sm_go)
+head(genes)
+ck_go <- enrichGO(genes, 'org.Hs.eg.db', keyType = "ENTREZID",ont="All", pvalueCutoff=0.01)
+head(ck_go)
 ```
 
-
-### Perform analysis on enrichDO
 ```{r}
-ck_do <- compareCluster(gene_list, fun="enrichDO", pvalueCutoff=0.05)
-sm_do <- pairwise_termsim(ck_do)
-dotplot(ck_do, size='count', showCategory=5, title='enrichDO')
-emapplot(sm_do)
+dotplot(ck_go, showCategory=100, title='enrichGO')
 ```
