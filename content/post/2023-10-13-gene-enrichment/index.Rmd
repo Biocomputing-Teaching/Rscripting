@@ -3,7 +3,7 @@ title: "Gene enrichment"
 author: "Jordi Villà-Freixa"
 date: "2023-10-13"
 categories: ["R"]
-tags: ["transcriptomics", "gene-enrichment"]
+tags: ["transcriptomics", "gene-enrichment","R Markdown"]
 ---
 
 # Enrichment analysis
@@ -21,13 +21,9 @@ Check extra info ![here](https://rpubs.com/Alexis22/ClusterProfiler)
 # 
 # BiocManager::install("clusterProfiler")
 # BiocManager::install("org.Hs.eg.db")
-# BiocManager::install("ReactomePA")
 # 
 # install.packages("enrichplot", repos = "https://cran.r-project.org")
-# install.packages("enrichR", repos = "https://cran.r-project.org")
-# install.packages("crayon", repos = "https://cran.r-project.org")
-# install.packages("GOSemSim")
-# install.packages("DOSE")
+
 
 ```
 
@@ -36,17 +32,13 @@ Check extra info ![here](https://rpubs.com/Alexis22/ClusterProfiler)
 ```{r}
 library(clusterProfiler)
 library(org.Hs.eg.db)
-# library(GOSemSim)
-# library(DOSE)
-# library(enrichR)
-# library(crayon) # So messages can be in blue font
 library(enrichplot)
 ```
 
 ## Load the list of genes
 
 ```{r}
-datafile <- 'data/Control_vs_NPDR.tsv'
+datafile <- 'data/DESeq2_FC.tsv'
 df <- read.csv(datafile,header=TRUE,sep='\t')
 # obtain the log2foldchage column
 fold_change <- df$log2FoldChange
@@ -67,16 +59,9 @@ output_dir <- 'results'
 ```{r}
 KEGG_genes <- enrichKEGG(gene= genes, organism= "hsa", pvalueCutoff = 0.05)
 head(KEGG_genes)
-dotplot(KEGG_genes,showCategory=10)
+dotplot(KEGG_genes,showCategory=15)
 sm_kegg <- pairwise_termsim(KEGG_genes)
-enrichplot::emapplot(sm_kegg, showCategory = 50)
-```
-
-```{r}
-# ck_kegg <- compareCluster(gene_list, fun="enrichKEGG", pvalueCutoff=0.05)
-# sm_kegg <- pairwise_termsim(ck_kegg)
-# dotplot(ck_kegg, size='count', showCategory=10, title='enrichKEGG')
-# emapplot(sm_kegg)
+enrichplot::emapplot(sm_kegg, showCategory = 20)
 ```
 
 ### Perform GSEA
@@ -96,8 +81,5 @@ gseaplot(GSEA_genes,geneSetID=4,title=GSEA_genes$Description[4])
 head(genes)
 ck_go <- enrichGO(genes, 'org.Hs.eg.db', keyType = "ENTREZID",ont="All", pvalueCutoff=0.01)
 head(ck_go)
-```
-
-```{r}
-dotplot(ck_go, showCategory=100, title='enrichGO')
+dotplot(ck_go, showCategory=15, title='enrichGO')
 ```
