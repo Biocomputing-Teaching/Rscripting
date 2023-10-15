@@ -2,7 +2,7 @@ baseurl: /
 publishDir: public
 languageCode: en-US
 title: Examples on R scripting
-theme: hugo-lithium
+theme: "hugo-book"
 googleAnalytics: ''
 disqusShortname: ''
 ignoreFiles:
