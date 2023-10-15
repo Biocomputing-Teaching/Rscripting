@@ -1,0 +1,8 @@
+enrichment-analysis
+install-packages
+load-libraries
+load-the-list-of-genes
+run-the-analysis-on-different-ontologies
+perform-analysis-on-enrichkegg
+perform-gsea
+perform-analysis-on-enrichgo

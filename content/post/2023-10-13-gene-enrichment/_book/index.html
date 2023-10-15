@@ -1,280 +1,235 @@
----
-title: "Gene enrichment"
-author: "Jordi Villà-Freixa"
-date: "2023-10-13"
-categories: ["R"]
-tags: ["transcriptomics", "gene-enrichment","R Markdown"]
----
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
 
-# Enrichment analysis
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Gene enrichment</title>
+  <meta name="description" content="Gene enrichment" />
+  <meta name="generator" content="bookdown 0.35 and GitBook 2.6.7" />
 
-Having obtained a file with the results of a DSeq2 differential expression calculation (stored below in the variable `datafile`), we perform an enrichment analysis in different databases.
+  <meta property="og:title" content="Gene enrichment" />
+  <meta property="og:type" content="book" />
+  
+  
+  
 
-Check extra info ![here](https://rpubs.com/Alexis22/ClusterProfiler)
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Gene enrichment" />
+  
+  
+  
 
-## Install packages
-
-
-```r
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#     install.packages("BiocManager")
-# 
-# BiocManager::install("clusterProfiler")
-# BiocManager::install("org.Hs.eg.db")
-# 
-# install.packages("enrichplot", repos = "https://cran.r-project.org")
-```
-
-## Load libraries
+<meta name="author" content="Jordi Villà-Freixa" />
 
 
-```r
-library(clusterProfiler)
-```
+<meta name="date" content="2023-10-13" />
 
-```
-## 
-```
-
-```
-## Registered S3 methods overwritten by 'treeio':
-##   method              from    
-##   MRCA.phylo          tidytree
-##   MRCA.treedata       tidytree
-##   Nnode.treedata      tidytree
-##   Ntip.treedata       tidytree
-##   ancestor.phylo      tidytree
-##   ancestor.treedata   tidytree
-##   child.phylo         tidytree
-##   child.treedata      tidytree
-##   full_join.phylo     tidytree
-##   full_join.treedata  tidytree
-##   groupClade.phylo    tidytree
-##   groupClade.treedata tidytree
-##   groupOTU.phylo      tidytree
-##   groupOTU.treedata   tidytree
-##   inner_join.phylo    tidytree
-##   inner_join.treedata tidytree
-##   is.rooted.treedata  tidytree
-##   nodeid.phylo        tidytree
-##   nodeid.treedata     tidytree
-##   nodelab.phylo       tidytree
-##   nodelab.treedata    tidytree
-##   offspring.phylo     tidytree
-##   offspring.treedata  tidytree
-##   parent.phylo        tidytree
-##   parent.treedata     tidytree
-##   root.treedata       tidytree
-##   rootnode.phylo      tidytree
-##   sibling.phylo       tidytree
-```
-
-```
-## clusterProfiler v4.8.3  For help: https://yulab-smu.top/biomedical-knowledge-mining-book/
-## 
-## If you use clusterProfiler in published research, please cite:
-## T Wu, E Hu, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo, and G Yu. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation. 2021, 2(3):100141
-```
-
-```
-## 
-## Attaching package: 'clusterProfiler'
-```
-
-```
-## The following object is masked from 'package:stats':
-## 
-##     filter
-```
-
-```r
-library(org.Hs.eg.db)
-```
-
-```
-## Loading required package: AnnotationDbi
-```
-
-```
-## Loading required package: stats4
-```
-
-```
-## Loading required package: BiocGenerics
-```
-
-```
-## 
-## Attaching package: 'BiocGenerics'
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     IQR, mad, sd, var, xtabs
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
-##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-##     Position, rank, rbind, Reduce, rownames, sapply, setdiff, sort,
-##     table, tapply, union, unique, unsplit, which.max, which.min
-```
-
-```
-## Loading required package: Biobase
-```
-
-```
-## Welcome to Bioconductor
-## 
-##     Vignettes contain introductory material; view with
-##     'browseVignettes()'. To cite Bioconductor, see
-##     'citation("Biobase")', and for packages 'citation("pkgname")'.
-```
-
-```
-## Loading required package: IRanges
-```
-
-```
-## Loading required package: S4Vectors
-```
-
-```
-## 
-## Attaching package: 'S4Vectors'
-```
-
-```
-## The following object is masked from 'package:clusterProfiler':
-## 
-##     rename
-```
-
-```
-## The following object is masked from 'package:utils':
-## 
-##     findMatches
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     expand.grid, I, unname
-```
-
-```
-## 
-## Attaching package: 'IRanges'
-```
-
-```
-## The following object is masked from 'package:clusterProfiler':
-## 
-##     slice
-```
-
-```
-## 
-## Attaching package: 'AnnotationDbi'
-```
-
-```
-## The following object is masked from 'package:clusterProfiler':
-## 
-##     select
-```
-
-```
-## 
-```
-
-```r
-library(enrichplot)
-```
-
-## Load the list of genes
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
 
 
-```r
-datafile <- 'data/DESeq2_FC.tsv'
-df <- read.csv(datafile,header=TRUE,sep='\t')
-# obtain the log2foldchage column
-fold_change <- df$log2FoldChange
-# name the vector
-genes <- mapIds(org.Hs.eg.db, df$ext_gene, 'ENTREZID', 'SYMBOL', multiVals = "first")
-```
-
-```
-## 'select()' returned 1:many mapping between keys and columns
-```
-
-```r
-names(fold_change) <- genes
-head(fold_change)
-```
-
-```
-##         7105         8813        57147         <NA>         2268         3075 
-## -0.126242767  0.001635086 -0.120702090 -0.100109126  0.201784965  0.126651588
-```
-
-```r
-# sort the list in dicreasing order, required for clusterprolfier
-gene_list <- sort(fold_change, decreasing = TRUE)
-head(gene_list)
-```
-
-```
-##      7503 100505994      3624      9383      9518      1839 
-##  2.221682  1.996216  1.989520  1.942090  1.813150  1.758168
-```
-
-```r
-output_dir <- 'results'
-```
-
-## Run the analysis on different Ontologies
-
-### Perform analysis on enrichKEGG
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
 
 
-```r
-KEGG_genes <- enrichKEGG(gene= genes, organism= "hsa", pvalueCutoff = 0.05)
-```
 
-```
-## Reading KEGG annotation online: "https://rest.kegg.jp/link/hsa/pathway"...
-```
 
-```
-## Reading KEGG annotation online: "https://rest.kegg.jp/list/pathway/hsa"...
-```
 
-```r
-head(KEGG_genes)
-```
 
-```
-##                ID                                       Description GeneRatio
-## hsa04360 hsa04360                                     Axon guidance  180/6462
-## hsa04144 hsa04144                                       Endocytosis  235/6462
-## hsa04140 hsa04140                                Autophagy - animal  159/6462
-## hsa04120 hsa04120                    Ubiquitin mediated proteolysis  138/6462
-## hsa05022 hsa05022 Pathways of neurodegeneration - multiple diseases  419/6462
-## hsa04510 hsa04510                                    Focal adhesion  189/6462
-##           BgRatio       pvalue     p.adjust       qvalue
-## hsa04360 182/8622 1.688246e-20 5.706271e-18 2.523483e-18
-## hsa04144 250/8622 9.907269e-16 1.674328e-13 7.404380e-14
-## hsa04140 165/8622 5.867458e-14 6.610670e-12 2.923435e-12
-## hsa04120 142/8622 2.666277e-13 1.816187e-11 8.031722e-12
-## hsa05022 476/8622 2.686668e-13 1.816187e-11 8.031722e-12
-## hsa04510 203/8622 9.962830e-12 5.612394e-10 2.481968e-10
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="#enrichment-analysis"><i class="fa fa-check"></i><b>1</b> Enrichment analysis</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="index.html"><a href="#install-packages"><i class="fa fa-check"></i><b>1.1</b> Install packages</a></li>
+<li class="chapter" data-level="1.2" data-path="index.html"><a href="#load-libraries"><i class="fa fa-check"></i><b>1.2</b> Load libraries</a></li>
+<li class="chapter" data-level="1.3" data-path="index.html"><a href="#load-the-list-of-genes"><i class="fa fa-check"></i><b>1.3</b> Load the list of genes</a></li>
+<li class="chapter" data-level="1.4" data-path="index.html"><a href="#run-the-analysis-on-different-ontologies"><i class="fa fa-check"></i><b>1.4</b> Run the analysis on different Ontologies</a>
+<ul>
+<li class="chapter" data-level="1.4.1" data-path="index.html"><a href="#perform-analysis-on-enrichkegg"><i class="fa fa-check"></i><b>1.4.1</b> Perform analysis on enrichKEGG</a></li>
+<li class="chapter" data-level="1.4.2" data-path="index.html"><a href="#perform-gsea"><i class="fa fa-check"></i><b>1.4.2</b> Perform GSEA</a></li>
+<li class="chapter" data-level="1.4.3" data-path="index.html"><a href="#perform-analysis-on-enrichgo"><i class="fa fa-check"></i><b>1.4.3</b> Perform analysis on enrichGO</a></li>
+</ul></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Gene enrichment</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="header">
+<h1 class="title">Gene enrichment</h1>
+<p class="author"><em>Jordi Villà-Freixa</em></p>
+<p class="date"><em>2023-10-13</em></p>
+</div>
+<div id="enrichment-analysis" class="section level1 hasAnchor" number="1">
+<h1><span class="header-section-number">1</span> Enrichment analysis<a href="#enrichment-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>Having obtained a file with the results of a DSeq2 differential expression calculation (stored below in the variable <code>datafile</code>), we perform an enrichment analysis in different databases.</p>
+<p>Check extra info <img src="https://rpubs.com/Alexis22/ClusterProfiler" alt="here" /></p>
+<div id="install-packages" class="section level2 hasAnchor" number="1.1">
+<h2><span class="header-section-number">1.1</span> Install packages<a href="#install-packages" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">#     install.packages(&quot;BiocManager&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;clusterProfiler&quot;)</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;org.Hs.eg.db&quot;)</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># install.packages(&quot;enrichplot&quot;, repos = &quot;https://cran.r-project.org&quot;)</span></span></code></pre></div>
+</div>
+<div id="load-libraries" class="section level2 hasAnchor" number="1.2">
+<h2><span class="header-section-number">1.2</span> Load libraries<a href="#load-libraries" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(clusterProfiler)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">library</span>(enrichplot)</span></code></pre></div>
+</div>
+<div id="load-the-list-of-genes" class="section level2 hasAnchor" number="1.3">
+<h2><span class="header-section-number">1.3</span> Load the list of genes<a href="#load-the-list-of-genes" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>datafile <span class="ot">&lt;-</span> <span class="st">&#39;data/DESeq2_FC.tsv&#39;</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(datafile,<span class="at">header=</span><span class="cn">TRUE</span>,<span class="at">sep=</span><span class="st">&#39;</span><span class="sc">\t</span><span class="st">&#39;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># obtain the log2foldchage column</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>fold_change <span class="ot">&lt;-</span> df<span class="sc">$</span>log2FoldChange</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># name the vector</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>genes <span class="ot">&lt;-</span> <span class="fu">mapIds</span>(org.Hs.eg.db, df<span class="sc">$</span>ext_gene, <span class="st">&#39;ENTREZID&#39;</span>, <span class="st">&#39;SYMBOL&#39;</span>, <span class="at">multiVals =</span> <span class="st">&quot;first&quot;</span>)</span></code></pre></div>
+<pre><code>## &#39;select()&#39; returned 1:many mapping between keys and columns</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">names</span>(fold_change) <span class="ot">&lt;-</span> genes</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">head</span>(fold_change)</span></code></pre></div>
+<pre><code>##         7105         8813        57147         &lt;NA&gt;         2268         3075 
+## -0.126242767  0.001635086 -0.120702090 -0.100109126  0.201784965  0.126651588</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># sort the list in dicreasing order, required for clusterprolfier</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>gene_list <span class="ot">&lt;-</span> <span class="fu">sort</span>(fold_change, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">head</span>(gene_list)</span></code></pre></div>
+<pre><code>##      7503 100505994      3624      9383      9518      1839 
+##  2.221682  1.996216  1.989520  1.942090  1.813150  1.758168</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>output_dir <span class="ot">&lt;-</span> <span class="st">&#39;results&#39;</span></span></code></pre></div>
+</div>
+<div id="run-the-analysis-on-different-ontologies" class="section level2 hasAnchor" number="1.4">
+<h2><span class="header-section-number">1.4</span> Run the analysis on different Ontologies<a href="#run-the-analysis-on-different-ontologies" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="perform-analysis-on-enrichkegg" class="section level3 hasAnchor" number="1.4.1">
+<h3><span class="header-section-number">1.4.1</span> Perform analysis on enrichKEGG<a href="#perform-analysis-on-enrichkegg" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>KEGG_genes <span class="ot">&lt;-</span> <span class="fu">enrichKEGG</span>(<span class="at">gene=</span> genes, <span class="at">organism=</span> <span class="st">&quot;hsa&quot;</span>, <span class="at">pvalueCutoff =</span> <span class="fl">0.05</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">head</span>(KEGG_genes)</span></code></pre></div>
+<pre><code>##                ID                                       Description GeneRatio  BgRatio       pvalue     p.adjust
+## hsa04360 hsa04360                                     Axon guidance  180/6462 182/8622 1.688246e-20 5.706271e-18
+## hsa04144 hsa04144                                       Endocytosis  235/6462 250/8622 9.907269e-16 1.674328e-13
+## hsa04140 hsa04140                                Autophagy - animal  159/6462 165/8622 5.867458e-14 6.610670e-12
+## hsa04120 hsa04120                    Ubiquitin mediated proteolysis  138/6462 142/8622 2.666277e-13 1.816187e-11
+## hsa05022 hsa05022 Pathways of neurodegeneration - multiple diseases  419/6462 476/8622 2.686668e-13 1.816187e-11
+## hsa04510 hsa04510                                    Focal adhesion  189/6462 203/8622 9.962830e-12 5.612394e-10
+##                qvalue
+## hsa04360 2.523483e-18
+## hsa04144 7.404380e-14
+## hsa04140 2.923435e-12
+## hsa04120 8.031722e-12
+## hsa05022 8.031722e-12
+## hsa04510 2.481968e-10
 ##                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         geneID
 ## hsa04360                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               6405/56920/2534/7869/2042/5291/816/2773/9423/25791/4756/387/5590/6093/815/998/2046/8440/7224/4775/59277/10371/10512/5362/5063/285220/54437/2932/54434/1947/57556/1808/57715/25/3983/8829/1943/5594/4776/4773/655/10398/57144/10627/5595/50855/7976/5296/4233/2051/3984/6387/219699/5532/1949/81029/9037/90249/7474/2771/5361/2043/8503/103910/5533/5290/7852/84612/5335/1948/6237/2770/64101/6608/10298/55558/5894/7223/2048/3845/9475/2045/10505/10154/5879/7225/56924/80031/8482/658/7222/5530/5998/5170/85464/1969/10500/1944/151449/91653/7220/9353/2044/817/5295/5921/2041/56288/818/57689/5058/3688/223117/64221/5578/55740/2047/137970/56896/4690/4917/54361/22854/6259/84448/5364/6469/1020/1073/3611/10501/54910/1942/5747/5881/6091/9723/5293/27289/1072/54961/29984/22885/3265/84552/5781/5062/8633/56963/2242/3985/2049/6586/1946/6092/10509/5727/6585/1630/10507/5535/64218/9901/84628/2050/23654/23365/57522/6714/5336/5365/9860/3897/659/4893/4636/5534/91584/1945/23380
 ## hsa04144                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     381/163/9265/51534/30845/30846/6642/9135/9765/1175/116984/55040/23327/5662/29924/2263/10565/387/5590/2261/55737/4734/8218/998/22905/7037/9744/7251/5337/7879/832/273/83737/1785/25978/64744/10890/2060/51510/55616/27131/51324/9727/51100/387680/27128/157/55738/128866/8411/50855/8766/30844/9266/858/857/8976/653857/7046/1759/8395/6456/22841/8729/28964/9267/5878/64750/3312/10938/867/10094/51699/5869/11021/60682/8724/131890/23527/868/8723/10096/10254/51652/7456/829/9829/9525/64411/440073/51019/7852/644150/1211/9559/11059/84612/10564/57403/23096/10617/2868/23550/58513/5338/58533/3949/10095/27243/5119/84440/64145/84313/116983/27183/23111/116988/57180/377/5156/116986/26056/4193/23325/51028/11311/274/8027/81873/408/10097/9101/9815/79720/3480/5371/6457/1213/409/93343/6455/8394/375/5868/9922/84249/1956/30011/29934/91782/56904/56288/84364/112936/8853/1601/50807/118813/137492/3798/23362/80223/9372/26119/116987/11267/2264/51160/1173/10092/10109/7048/5584/9897/382/4088/138429/4218/55048/5867/3800/378/11031/10015/3799/147179/729092/253725/254122/156/3310/3265/7189/4087/1212/79643/155382/80230/84552/100287171/10193/9798/161/9230/9146/6011/23396/116985/119016/89853/160/3482/6714/26052/2870/57154/2869/830/55680/414189/642517/3304/3303/3305/3107/3133/3134/6643/3105/3106/10093/10552/26286/29082/57132
@@ -288,161 +243,90 @@ head(KEGG_genes)
 ## hsa04140   159
 ## hsa04120   138
 ## hsa05022   419
-## hsa04510   189
-```
-
-```r
-dotplot(KEGG_genes,showCategory=15)
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" />
-
-```r
-sm_kegg <- pairwise_termsim(KEGG_genes)
-enrichplot::emapplot(sm_kegg, showCategory = 20)
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-2.png" width="672" />
-
-### Perform GSEA
-
-
-```r
-GSEA_genes <- gseKEGG(geneList     = gene_list, organism     = "hsa", nPerm= 1000,         minGSSize    = 10, pvalueCutoff = 1, verbose      = FALSE)
-```
-
-```
-## Warning in .GSEA(geneList = geneList, exponent = exponent, minGSSize =
-## minGSSize, : We do not recommend using nPerm parameter incurrent and future
-## releases
-```
-
-```
-## Warning in fgsea(pathways = geneSets, stats = geneList, nperm = nPerm, minSize
-## = minGSSize, : You are trying to run fgseaSimple. It is recommended to use
-## fgseaMultilevel. To run fgseaMultilevel, you need to remove the nperm argument
-## in the fgsea function call.
-```
-
-```
-## Warning in preparePathwaysAndStats(pathways, stats, minSize, maxSize,
-## gseaParam, : There are duplicate gene names, fgsea may produce unexpected
-## results.
-```
-
-```r
-head(GSEA_genes)
-```
-
-```
-##                ID                     Description setSize enrichmentScore
-## hsa05033 hsa05033              Nicotine addiction      37       0.6475904
-## hsa00900 hsa00900 Terpenoid backbone biosynthesis      21       0.7235875
-## hsa04630 hsa04630      JAK-STAT signaling pathway     102       0.5015021
-## hsa04713 hsa04713           Circadian entrainment      90       0.4929163
-## hsa04540 hsa04540                    Gap junction      80       0.4975319
-## hsa05032 hsa05032              Morphine addiction      86       0.4758760
-##               NES      pvalue   p.adjust     qvalue rank
-## hsa05033 1.993375 0.001562500 0.04515005 0.04061601 4364
-## hsa00900 1.952772 0.001607717 0.04515005 0.04061601 2844
-## hsa04630 1.837698 0.001459854 0.04515005 0.04061601 1681
-## hsa04713 1.774697 0.001492537 0.04515005 0.04061601 5405
-## hsa04540 1.756519 0.001506024 0.04515005 0.04061601 4366
-## hsa05032 1.695348 0.001510574 0.04515005 0.04061601 4366
+## hsa04510   189</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">dotplot</span>(KEGG_genes,<span class="at">showCategory=</span><span class="dv">15</span>)</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>sm_kegg <span class="ot">&lt;-</span> <span class="fu">pairwise_termsim</span>(KEGG_genes)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>enrichplot<span class="sc">::</span><span class="fu">emapplot</span>(sm_kegg, <span class="at">showCategory =</span> <span class="dv">20</span>)</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
+</div>
+<div id="perform-gsea" class="section level3 hasAnchor" number="1.4.2">
+<h3><span class="header-section-number">1.4.2</span> Perform GSEA<a href="#perform-gsea" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>GSEA_genes <span class="ot">&lt;-</span> <span class="fu">gseKEGG</span>(<span class="at">geneList     =</span> gene_list, <span class="at">organism     =</span> <span class="st">&quot;hsa&quot;</span>, <span class="at">nPerm=</span> <span class="dv">1000</span>,         <span class="at">minGSSize    =</span> <span class="dv">10</span>, <span class="at">pvalueCutoff =</span> <span class="dv">1</span>, <span class="at">verbose      =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<pre><code>## Warning in .GSEA(geneList = geneList, exponent = exponent, minGSSize = minGSSize, : We do not recommend using nPerm
+## parameter incurrent and future releases</code></pre>
+<pre><code>## Warning in fgsea(pathways = geneSets, stats = geneList, nperm = nPerm, minSize = minGSSize, : You are trying to run
+## fgseaSimple. It is recommended to use fgseaMultilevel. To run fgseaMultilevel, you need to remove the nperm argument in the
+## fgsea function call.</code></pre>
+<pre><code>## Warning in preparePathwaysAndStats(pathways, stats, minSize, maxSize, gseaParam, : There are duplicate gene names, fgsea
+## may produce unexpected results.</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">head</span>(GSEA_genes)</span></code></pre></div>
+<pre><code>##                ID                     Description setSize enrichmentScore       NES      pvalue   p.adjust    qvalue rank
+## hsa03010 hsa03010                        Ribosome     127      -0.6093172 -2.553323 0.003472222 0.09697842 0.0875426 6387
+## hsa00010 hsa00010    Glycolysis / Gluconeogenesis      49      -0.5745621 -2.038130 0.002941176 0.09697842 0.0875426 3125
+## hsa05033 hsa05033              Nicotine addiction      37       0.6475904  1.958750 0.001600000 0.09697842 0.0875426 4364
+## hsa00900 hsa00900 Terpenoid backbone biosynthesis      21       0.7235875  1.953742 0.003257329 0.09697842 0.0875426 2844
+## hsa03030 hsa03030                 DNA replication      35      -0.5733613 -1.900177 0.002710027 0.09697842 0.0875426 6611
+## hsa04630 hsa04630      JAK-STAT signaling pathway     102       0.5015021  1.835666 0.001396648 0.09697842 0.0875426 1681
 ##                            leading_edge
+## hsa03010 tags=70%, list=28%, signal=51%
+## hsa00010 tags=49%, list=14%, signal=42%
 ## hsa05033 tags=59%, list=19%, signal=48%
 ## hsa00900 tags=38%, list=12%, signal=33%
+## hsa03030 tags=63%, list=29%, signal=45%
 ## hsa04630  tags=18%, list=7%, signal=16%
-## hsa04713 tags=50%, list=23%, signal=38%
-## hsa04540 tags=36%, list=19%, signal=30%
-## hsa05032 tags=43%, list=19%, signal=35%
-##                                                                                                                                                                                                                              core_enrichment
-## hsa05033                                                                                                                  2557/2565/2570/2904/8973/1139/774/2569/2556/2892/200959/2902/57084/1137/2555/2891/773/246213/2554/116443/2561/2893
-## hsa00900                                                                                                                                                                                               3158/39/4597/3156/3422/3157/2224/4598
-## hsa04630                                                                                                                                       3976/23529/9021/50615/1026/3595/3570/1154/5292/3601/5618/3600/4609/6775/3566/149233/3589/6778
-## hsa04713 51655/55811/116/109/2904/5593/59345/51764/196883/2892/23236/2977/113/816/2785/5578/2902/5582/6262/3763/55970/8913/2982/2891/3760/2790/163688/6263/91860/776/114/3765/5579/108/2778/801/2893/111/54331/2353/2983/2783/2775/3708/9252
-## hsa04540                                                                              84617/3358/109/7280/2915/5593/10381/196883/51807/23236/80310/2977/113/10382/5578/5582/153/1902/2982/347733/1453/114/7846/5579/3845/108/2778/203068/111
-## hsa05032                                            2557/10846/5136/2565/109/2570/774/59345/51764/2569/196883/2556/200959/2869/113/2785/5578/5582/3763/2555/55970/5139/3760/773/2790/114/3765/5142/5579/2554/108/2778/8622/4988/408/2561/111
-```
-
-```r
-gseaplot(GSEA_genes,geneSetID=1,title=GSEA_genes$Description[1])
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" />
-
-```r
-gseaplot(GSEA_genes,geneSetID=2,title=GSEA_genes$Description[2])
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-2.png" width="672" />
-
-```r
-gseaplot(GSEA_genes,geneSetID=3,title=GSEA_genes$Description[3])
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-3.png" width="672" />
-
-```r
-gseaplot(GSEA_genes,geneSetID=4,title=GSEA_genes$Description[4])
-```
-
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-4.png" width="672" />
-
-### Perform analysis on enrichGO
-
-
-```r
-head(genes)
-```
-
-```
-## $TSPAN6
-## [1] "7105"
+##                                                                                                                                                                                                                                                                                                                                                                                                                                                                           core_enrichment
+## hsa03010 65008/64979/6136/51264/65003/51069/6224/6138/6167/6204/6125/51116/55168/51065/54460/6146/124995/6150/6122/10573/29074/4736/6187/29093/6209/51121/6165/6158/7311/6233/6176/6228/6130/6171/6230/6132/6210/6168/25873/6147/6156/6234/6160/6143/6229/6188/6206/6194/6124/6201/6128/6135/6164/6170/9349/6202/6203/3921/6181/2197/6217/6193/6218/6152/6155/11224/6142/6141/6157/6173/6159/6154/6222/6207/6223/6129/23521/6189/6161/64928/6208/6205/6227/6232/63875/6169/6175/6134/6133
+## hsa00010                                                                                                                                                                                                                                                                                                                                                     2821/10327/9562/224/5211/221/230/3101/5223/130589/226/84532/2026/5230/3939/5315/160287/2597/387712/7167/5214/2023/3099/57818
+## hsa05033                                                                                                                                                                                                                                                                                                                                                               2557/2565/2570/2904/8973/1139/774/2569/2556/2892/200959/2902/57084/1137/2555/2891/773/246213/2554/116443/2561/2893
+## hsa00900                                                                                                                                                                                                                                                                                                                                                                                                                                            3158/39/4597/3156/3422/3157/2224/4598
+## hsa03030                                                                                                                                                                                                                                                                                                                                                             84153/56655/5558/23649/5983/10714/4172/4173/3978/5985/5427/57804/6119/54107/6117/5424/10535/4176/6118/5111/4171/4174
+## hsa04630                                                                                                                                                                                                                                                                                                                                                                                    3976/23529/9021/50615/1026/3595/3570/1154/5292/3601/5618/3600/4609/6775/3566/149233/3589/6778</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">gseaplot</span>(GSEA_genes,<span class="at">geneSetID=</span><span class="dv">1</span>,<span class="at">title=</span>GSEA_genes<span class="sc">$</span>Description[<span class="dv">1</span>])</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">gseaplot</span>(GSEA_genes,<span class="at">geneSetID=</span><span class="dv">2</span>,<span class="at">title=</span>GSEA_genes<span class="sc">$</span>Description[<span class="dv">2</span>])</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">gseaplot</span>(GSEA_genes,<span class="at">geneSetID=</span><span class="dv">3</span>,<span class="at">title=</span>GSEA_genes<span class="sc">$</span>Description[<span class="dv">3</span>])</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-17-3.png" width="672" /></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">gseaplot</span>(GSEA_genes,<span class="at">geneSetID=</span><span class="dv">4</span>,<span class="at">title=</span>GSEA_genes<span class="sc">$</span>Description[<span class="dv">4</span>])</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-17-4.png" width="672" /></p>
+</div>
+<div id="perform-analysis-on-enrichgo" class="section level3 hasAnchor" number="1.4.3">
+<h3><span class="header-section-number">1.4.3</span> Perform analysis on enrichGO<a href="#perform-analysis-on-enrichgo" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">head</span>(genes)</span></code></pre></div>
+<pre><code>## $TSPAN6
+## [1] &quot;7105&quot;
 ## 
 ## $DPM1
-## [1] "8813"
+## [1] &quot;8813&quot;
 ## 
 ## $SCYL3
-## [1] "57147"
+## [1] &quot;57147&quot;
 ## 
 ## $C1orf112
 ## [1] NA
 ## 
 ## $FGR
-## [1] "2268"
+## [1] &quot;2268&quot;
 ## 
 ## $CFH
-## [1] "3075"
-```
-
-```r
-ck_go <- enrichGO(genes, 'org.Hs.eg.db', keyType = "ENTREZID",ont="All", pvalueCutoff=0.01)
-head(ck_go)
-```
-
-```
-##            ONTOLOGY         ID
-## GO:0043161       BP GO:0043161
-## GO:0050808       BP GO:0050808
-## GO:0022613       BP GO:0022613
-## GO:0042254       BP GO:0042254
-## GO:0034470       BP GO:0034470
-## GO:0007264       BP GO:0007264
-##                                                                  Description
-## GO:0043161 proteasome-mediated ubiquitin-dependent protein catabolic process
-## GO:0050808                                              synapse organization
-## GO:0022613                              ribonucleoprotein complex biogenesis
-## GO:0042254                                               ribosome biogenesis
-## GO:0034470                                                  ncRNA processing
-## GO:0007264                         small GTPase mediated signal transduction
-##            GeneRatio   BgRatio       pvalue     p.adjust       qvalue
-## GO:0043161 417/13555 439/18614 2.905379e-34 1.877456e-30 1.211696e-30
-## GO:0050808 439/13555 466/18614 2.582763e-33 8.344908e-30 5.385741e-30
-## GO:0022613 444/13555 475/18614 2.765971e-31 5.957901e-28 3.845185e-28
-## GO:0042254 290/13555 298/18614 2.464734e-30 3.981778e-27 2.569809e-27
-## GO:0034470 406/13555 432/18614 3.387250e-30 4.377682e-27 2.825323e-27
-## GO:0007264 449/13555 483/18614 5.165955e-30 5.563734e-27 3.590792e-27
+## [1] &quot;3075&quot;</code></pre>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>ck_go <span class="ot">&lt;-</span> <span class="fu">enrichGO</span>(genes, <span class="st">&#39;org.Hs.eg.db&#39;</span>, <span class="at">keyType =</span> <span class="st">&quot;ENTREZID&quot;</span>,<span class="at">ont=</span><span class="st">&quot;All&quot;</span>, <span class="at">pvalueCutoff=</span><span class="fl">0.01</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a><span class="fu">head</span>(ck_go)</span></code></pre></div>
+<pre><code>##            ONTOLOGY         ID                                                       Description GeneRatio   BgRatio
+## GO:0043161       BP GO:0043161 proteasome-mediated ubiquitin-dependent protein catabolic process 417/13555 439/18614
+## GO:0050808       BP GO:0050808                                              synapse organization 439/13555 466/18614
+## GO:0022613       BP GO:0022613                              ribonucleoprotein complex biogenesis 444/13555 475/18614
+## GO:0042254       BP GO:0042254                                               ribosome biogenesis 290/13555 298/18614
+## GO:0034470       BP GO:0034470                                                  ncRNA processing 406/13555 432/18614
+## GO:0007264       BP GO:0007264                         small GTPase mediated signal transduction 449/13555 483/18614
+##                  pvalue     p.adjust       qvalue
+## GO:0043161 2.905379e-34 1.877456e-30 1.211696e-30
+## GO:0050808 2.582763e-33 8.344908e-30 5.385741e-30
+## GO:0022613 2.765971e-31 5.957901e-28 3.845185e-28
+## GO:0042254 2.464734e-30 3.981778e-27 2.569809e-27
+## GO:0034470 3.387250e-30 4.377682e-27 2.825323e-27
+## GO:0007264 5.165955e-30 5.563734e-27 3.590792e-27
 ##                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       geneID
 ## GO:0043161                                                                                                                                                                                                                    2729/54467/996/57414/26224/5689/3077/54476/5704/51667/9604/23376/25937/23304/8554/25897/8452/5685/3309/1161/23327/51528/5601/9709/29945/8454/10513/6047/4287/22933/27248/7353/55658/6400/28951/55743/23291/51009/27252/9618/54431/51548/7319/369/3093/5527/83737/9817/5663/57092/2932/7514/5705/57542/6790/55741/55968/51433/10296/25831/117584/8697/51322/3326/23411/5714/54620/997/84861/91319/84164/80020/79734/9978/27351/114088/5706/5684/51676/5700/5693/80344/5687/26133/5688/54994/57761/9097/4092/5716/6907/5713/8312/79791/10273/6923/51283/9325/55284/7993/5516/6449/51343/55101/29997/2931/857/5683/10952/1855/10613/6468/79176/8453/27338/84961/5709/57003/5717/64750/7126/7323/7466/23321/55294/10612/25906/329/9354/26273/83892/8078/84727/4121/26268/26235/10973/10475/23197/6500/1452/51185/25852/10213/10297/550/7341/4780/11315/80267/127544/26232/26270/51377/991/90025/26234/7320/5887/84078/1191/7706/8405/11059/10755/1017/8239/116138/9491/10616/5690/79654/821/54850/146330/4189/23008/8924/25847/5682/51105/863/8881/79016/11047/10277/6451/55829/7326/93611/23640/116988/79845/9695/9575/324/29979/55122/10956/4193/55336/3300/84101/23392/5695/79139/90865/9373/255488/51439/408/55298/6386/55212/91445/144165/8451/5371/55070/79018/409/1453/51529/55527/207/5694/6135/5686/64326/51514/23190/339745/130507/285533/85409/6502/64839/56929/81545/64777/154214/2768/11011/6872/8473/11160/8667/9781/196394/26272/1601/64682/1047/25827/64795/9320/7345/57630/80028/122416/153769/91544/130617/57805/54461/5710/5692/197131/267/118424/10444/56893/222235/5701/126433/90864/899/51035/84447/79699/127733/80232/55139/201595/23429/9861/25898/26043/10393/285671/22836/819/26223/6469/83590/91147/7415/254170/23588/9147/89890/5702/3429/8945/9529/25820/8065/119504/7184/5347/4130/26263/90850/54442/1642/1499/149603/79089/8313/92305/10116/7480/11337/80196/4534/9655/80176/144699/10869/143941/10524/344558/150684/10221/6599/5707/1263/165324/80311/200933/11146/253980/26259/92369/5708/1649/29882/246184/493829/11253/10425/79718/90637/811/5886/81858/122809/223082/55432/23510/6478/26233/55666/9112/23194/7327/11124/5071/5719/23532/10134/84937/7328/7874/378884/29978/342897/6613/387921/120892/2272/6477/51434/5094/5718/57162/283807/10210/122773/23607/258010/65992/6815/11060/57154/51465/26046/25853/9867/6048/3304/3303/7917/56658/10399/10206/131405/1454/23053/137886/283514/7844/1050/115290/6880/101927423/5691
 ## GO:0050808                                                                                                                                                                                                6405/57679/23129/115703/23077/3675/6376/9912/5048/6853/6792/2534/2554/999/27067/1008/3371/84062/140689/816/11178/124925/9423/1496/25791/782/387/6093/56850/54549/55737/4734/5217/6710/998/22859/87/6620/119/60/1739/2239/83992/5063/51150/4983/5663/4208/779/56131/23085/5978/57549/2017/8898/43/9762/4897/7430/10013/54209/25/8829/5064/1399/23544/9463/4744/5641/51804/6547/9252/9362/4776/23394/6640/79953/10857/91851/158866/1821/869/29904/9093/80208/51201/1760/7087/5802/5864/8976/6505/51104/1855/9806/9148/22943/5216/40/8506/51225/1949/2743/3312/9379/3587/5818/8496/65981/23316/1108/4739/1432/11329/266727/10486/8936/5754/56133/1007/56132/26167/56130/2566/1004/1627/7337/7474/1981/85461/2043/7143/58512/8443/84966/8934/991/23184/6543/8828/27253/9419/56126/56122/2185/23024/22865/6780/64284/5911/1948/718/23767/79414/55906/5908/5300/64101/58504/2258/348/547/23025/3911/9026/10288/23229/10882/94030/8500/4131/1742/63827/10810/2048/8536/6272/4038/577/2045/84694/4076/54583/55619/10154/5100/28988/153090/7097/6386/440279/3706/102/22891/10152/9746/347902/8499/643866/3480/4916/8128/10939/147381/2064/351/207/5792/23557/375/8497/388/165257/66000/6622/2561/26045/7162/221935/57502/8473/55638/80728/4915/256158/9118/57689/1813/84623/22866/53942/3688/1006/23284/2823/23657/288/9231/5800/2555/5457/2895/9456/8404/10160/55203/831/50807/5789/2047/116442/57497/27020/375323/51738/6529/7804/8321/26060/11079/10163/64084/714/23181/84885/1141/50944/22941/4774/22854/27185/347730/10611/7855/5783/323/6259/5364/8927/79012/91137/1020/7534/7415/26050/145581/382/7248/389941/783/654429/2562/8495/10369/1398/784/7846/1499/55209/1524/378/2339/2915/4204/4920/1942/11141/5881/22871/1501/3684/9758/57555/1140/9723/91752/1000/26115/3643/4884/4761/1826/22883/10243/5728/5621/653464/11346/2596/3913/257194/1072/54674/6623/713/712/1605/78999/6712/200933/266743/339855/26470/170506/1488/1139/10458/285489/57633/29882/627/8851/8541/56127/114798/2066/139065/9378/5021/2149/57463/575/785/2049/2894/71/6900/1946/84189/1812/6092/23768/10196/10718/84631/7058/27445/4137/6585/56123/1282/26059/6572/10507/729956/92737/1287/375790/1201/8326/388336/120892/5649/26280/3556/64218/203068/54413/84628/23654/4763/2316/8831/728/56125/26037/26052/23607/4914/23237/10497/347731/22899/3897/9722/80863/1639/8292/407030/23012/339398/387804/91584/392617/5098/56097/56098/400916/85358/441381/3690/23732/23380/100528062/57717/2904/23191/80725/4747
@@ -456,11 +340,73 @@ head(ck_go)
 ## GO:0022613   444
 ## GO:0042254   290
 ## GO:0034470   406
-## GO:0007264   449
-```
+## GO:0007264   449</code></pre>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="fu">dotplot</span>(ck_go, <span class="at">showCategory=</span><span class="dv">15</span>, <span class="at">title=</span><span class="st">&#39;enrichGO&#39;</span>)</span></code></pre></div>
+<p><img src="_main_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 
-```r
-dotplot(ck_go, showCategory=10, title='enrichGO')
-```
+</div>
+</div>
+</div>
+            </section>
 
-<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>

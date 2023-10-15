@@ -81,5 +81,5 @@ gseaplot(GSEA_genes,geneSetID=4,title=GSEA_genes$Description[4])
 head(genes)
 ck_go <- enrichGO(genes, 'org.Hs.eg.db', keyType = "ENTREZID",ont="All", pvalueCutoff=0.01)
 head(ck_go)
-dotplot(ck_go, showCategory=15, title='enrichGO')
+dotplot(ck_go, showCategory=10, title='enrichGO')
 ```
